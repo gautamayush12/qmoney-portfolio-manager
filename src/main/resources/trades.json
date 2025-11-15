@@ -1,0 +1,17 @@
+[
+  {
+    "symbol": "AAPL",
+    "purchaseDate": "2020-01-01",
+    "quantity": "4"
+  },
+  {
+    "symbol": "MSFT",
+    "purchaseDate": "2020-01-03",
+    "quantity": "1"
+  },
+  {
+    "symbol": "GOOGL",
+    "purchaseDate": "2020-01-04",
+    "quantity": "2"
+  }
+]
