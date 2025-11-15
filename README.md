@@ -1,37 +1,66 @@
-# qmoney-portfolio-manager
-Java Spring Boot application to analyze client stock portfolios, fetch historical data, compute annualized returns, and visualize performance.
+🚀 QMoney Portfolio Manager
 
-QMoney Portfolio Manager
+QMoney Portfolio Manager is a Java backend library for analyzing and managing user stock portfolios. It fetches historical stock data from APIs, computes annualized returns, and sorts stocks based on performance. Built with modular and extensible design, it makes adding new stock data providers seamless!
 
-QMoney Portfolio Manager is a Java backend library for analyzing and managing user stock portfolios. It fetches historical stock data from APIs, computes annualized returns, and sorts stocks based on performance. The project is designed to be modular and extensible, allowing integration of multiple data providers and advanced portfolio analytics.
+✨ Features
 
-Features
+📁 Read User Trades from JSON:
 
-Read and process user trades from a JSON file.
+Deserialize JSON files containing historical trades.
 
-Fetch historical stock prices from Tiingo via REST APIs (and can be extended to other providers like Alpha Vantage).
+Extract stock symbols and trade details for processing.
 
-Compute annualized returns for user portfolios.
+📊 Fetch Historical Stock Prices via REST APIs:
 
-Sort stocks based on closing price.
+Tiingo API integration.
 
-Extensible and modular design using interfaces and the Factory Method pattern:
+Easily extendable to other providers like Alpha Vantage.
 
-Separate interfaces for stock data providers.
+📈 Compute Annualized Returns:
 
-Factory methods to create instances of different providers without changing core logic.
+Calculate portfolio performance over time using accurate financial formulas.
 
-Enables adding new APIs or changing providers easily.
+🔢 Sort Stocks by Closing Price:
 
-Graceful handling of errors and exceptions in stock data processing.
+Get ascending or descending order of stock performance for analysis.
 
-Technologies Used
+🏗 Factory Method Design Pattern:
+
+Core logic interacts with interfaces, not concrete implementations.
+
+Swap or add new stock data providers without changing main code.
+
+Encourages scalability and maintainability.
+
+💾 Data Serialization & Deserialization:
+
+Handle JSON efficiently with Jackson.
+
+Support for Java 8 LocalDate and other date/time formats.
+
+⚠ Error Handling & Robustness:
+
+Gracefully handle missing or malformed data.
+
+Handle API failures, rate-limits, and invalid responses.
+
+🔄 Refactoring & Modularization:
+
+Code is organized in packages and interfaces for clean architecture.
+
+Extensible to new features or analytics calculations.
+
+📚 Portfolio Analysis Ready for Frontend Integration:
+
+All calculations and data structures are prepared for visualization in frontend apps.
+
+🛠 Technologies Used
 
 Java 21
 
 Spring Boot
 
-Jackson (jackson-databind, jackson-datatype-jsr310)
+Jackson (JSON parsing)
 
 REST API (RestTemplate)
 
