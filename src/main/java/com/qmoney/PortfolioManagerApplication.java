@@ -17,127 +17,132 @@ import java.util.*;
 
 public class PortfolioManagerApplication {
 
-    private static final String TOKEN = "YOUR_TIINGO_TOKEN_HERE";
+    private static final String TOKEN = "8c02a65d8db7603a9b3e6cc9d54c8a2b58763b6c";
 
-    // ------------------ Helper: Load file ------------------
+    // ----------------------------- MODULE 1 -----------------------------
     public static File resolveFileFromResources(String filename) throws URISyntaxException {
         URL resource = PortfolioManagerApplication.class.getClassLoader().getResource(filename);
         if (resource == null) {
-            throw new IllegalArgumentException("File not found: " + filename);
+            throw new RuntimeException("File not found: " + filename);
         }
         return new File(resource.toURI());
     }
 
-    // ------------------ Read JSON ------------------
     public static List<PortfolioTrade> readTradesFromJson(String fileName)
             throws IOException, URISyntaxException {
 
         File inputFile = resolveFileFromResources(fileName);
-        ObjectMapper om = new ObjectMapper();
-        om.registerModule(new JavaTimeModule());
 
-        PortfolioTrade[] trades = om.readValue(inputFile, PortfolioTrade[].class);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
 
-        List<PortfolioTrade> tradeList = new ArrayList<>();
-        for (PortfolioTrade trade : trades) {
-            tradeList.add(trade);
+        PortfolioTrade[] trades = mapper.readValue(inputFile, PortfolioTrade[].class);
+
+        List<PortfolioTrade> list = new ArrayList<>();
+        for (PortfolioTrade t : trades) {
+            list.add(t);
         }
-        return tradeList;
+        return list;
     }
 
-    // ------------------ API Call ------------------
-    public static List<TiingoCandle> getStockQuotes(String symbol, LocalDate from, LocalDate to)
-            throws IOException {
+    // ----------------------------- MODULE 2 -----------------------------
+    public static List<TiingoCandle> getStockQuotes(String symbol, LocalDate from, LocalDate to) {
 
-        String url = String.format(
-                "https://api.tiingo.com/tiingo/daily/%s/prices?startDate=%s&endDate=%s&token=%s",
-                symbol, from.toString(), to.toString(), TOKEN
-        );
+        String url = "https://api.tiingo.com/tiingo/daily/" + symbol + "/prices"
+                + "?startDate=" + from
+                + "&endDate=" + to
+                + "&token=" + TOKEN;
 
         RestTemplate restTemplate = new RestTemplate();
-
         TiingoCandle[] response = restTemplate.getForObject(url, TiingoCandle[].class);
 
-        if (response == null) {
-            return Collections.emptyList();
+        List<TiingoCandle> list = new ArrayList<>();
+        if (response != null) {
+            for (TiingoCandle c : response) {
+                list.add(c);
+            }
         }
-
-        List<TiingoCandle> candleList = new ArrayList<>();
-        for (TiingoCandle c : response) {
-            candleList.add(c);
-        }
-        return candleList;
+        return list;
     }
 
-    // ------------------ Wrapper ------------------
-    public static List<TiingoCandle> fetchCandles(PortfolioTrade trade, LocalDate endDate)
-            throws IOException {
-
-        return getStockQuotes(
-                trade.getSymbol(),
-                trade.getPurchaseDate(),
-                endDate
-        );
+    public static List<TiingoCandle> fetchCandles(PortfolioTrade trade, LocalDate endDate) {
+        return getStockQuotes(trade.getSymbol(), trade.getPurchaseDate(), endDate);
     }
 
-    // ------------------ Opening Price ------------------
-    public static Double getOpeningPrice(List<TiingoCandle> candles) {
+    // ----------------------------- MODULE 3 — PART A -----------------------------
+    public static Double getOpeningPriceOnStartDate(List<TiingoCandle> candles) {
         return candles.get(0).getOpen();
     }
 
-    // ------------------ Closing Price ------------------
-    public static Double getClosingPrice(List<TiingoCandle> candles) {
+    public static Double getClosingPriceOnEndDate(List<TiingoCandle> candles) {
         return candles.get(candles.size() - 1).getClose();
     }
 
-    // ------------------ Annualized Return Formula ------------------
-    public static AnnualizedReturn calculateAnnualizedReturns(LocalDate endDate,
-                                                              PortfolioTrade trade,
-                                                              Double buyPrice,
-                                                              Double sellPrice) {
+    // ----------------------------- MODULE 3 — PART B -----------------------------
+    public static AnnualizedReturn calculateAnnualizedReturns(
+            LocalDate endDate,
+            PortfolioTrade trade,
+            Double buyPrice,
+            Double sellPrice) {
 
-        double totalReturns = (sellPrice - buyPrice) / buyPrice;
+        // Absolute return
+        double totalReturn = (sellPrice - buyPrice) / buyPrice;
 
-        long daysBetween = ChronoUnit.DAYS.between(trade.getPurchaseDate(), endDate);
-        double years = daysBetween / 365.24;
+        // Duration in years
+        long totalDays = ChronoUnit.DAYS.between(trade.getPurchaseDate(), endDate);
+        double years = totalDays / 365.24;
 
-        double annualizedReturns = Math.pow(1 + totalReturns, 1 / years) - 1;
+        // Annualized return formula
+        double annualized = Math.pow(1 + totalReturn, 1 / years) - 1;
 
-        return new AnnualizedReturn(trade.getSymbol(), annualizedReturns, totalReturns);
+        return new AnnualizedReturn(trade.getSymbol(), annualized, totalReturn);
     }
 
-    // ------------------ Compute all ------------------
-    public static List<AnnualizedReturn> getAnnualizedReturn(List<PortfolioTrade> trades,
-                                                             LocalDate endDate)
-            throws IOException {
+    // ----------------------------- MODULE 3 — PART C -----------------------------
+    public static List<AnnualizedReturn> getAnnualizedReturn(
+            List<PortfolioTrade> trades,
+            LocalDate endDate) throws IOException {
 
-        List<AnnualizedReturn> returnsList = new ArrayList<>();
+        List<AnnualizedReturn> finalList = new ArrayList<>();
 
         for (PortfolioTrade trade : trades) {
+
             List<TiingoCandle> candles = fetchCandles(trade, endDate);
 
-            Double buyPrice = getOpeningPrice(candles);
-            Double sellPrice = getClosingPrice(candles);
+            if (candles.isEmpty()) {
+                continue;
+            }
 
-            AnnualizedReturn ar = calculateAnnualizedReturns(endDate, trade, buyPrice, sellPrice);
-            returnsList.add(ar);
+            Double buyPrice = getOpeningPriceOnStartDate(candles);
+            Double sellPrice = getClosingPriceOnEndDate(candles);
+
+            AnnualizedReturn ar =
+                    calculateAnnualizedReturns(endDate, trade, buyPrice, sellPrice);
+
+            finalList.add(ar);
         }
 
-        returnsList.sort(
-                Comparator.comparing(AnnualizedReturn::getAnnualizedReturn).reversed()
-        );
+        // Sort from highest annualized return to lowest
+        Collections.sort(finalList, new Comparator<AnnualizedReturn>() {
+            @Override
+            public int compare(AnnualizedReturn a, AnnualizedReturn b) {
+                return Double.compare(b.getAnnualizedReturn(), a.getAnnualizedReturn());
+            }
+        });
 
-        return returnsList;
+        return finalList;
     }
 
-    // ------------------ MAIN ------------------
+    // ----------------------------- MAIN FOR LOCAL TESTING -----------------------------
     public static void main(String[] args) throws Exception {
-
         List<PortfolioTrade> trades = readTradesFromJson("trades.json");
-        LocalDate endDate = LocalDate.parse("2020-01-01");
+        LocalDate endDate = LocalDate.parse("2020-01-05");
 
-        List<AnnualizedReturn> returnsList = getAnnualizedReturn(trades, endDate);
+        List<AnnualizedReturn> result = getAnnualizedReturn(trades, endDate);
 
-        returnsList.forEach(System.out::println);
+        for (AnnualizedReturn ar : result) {
+            System.out.println(ar);
+        }
     }
+
 }
