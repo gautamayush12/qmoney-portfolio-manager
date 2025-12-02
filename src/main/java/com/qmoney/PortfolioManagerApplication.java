@@ -42,7 +42,7 @@ public class PortfolioManagerApplication {
         LocalDate endDate = LocalDate.parse("2020-01-05");
 
         PortfolioManager manager =
-                PortfolioManagerFactory.getPortfolioManager("8c02a65d8db7603a9b3e6cc9d54c8a2b58763b6c");
+                PortfolioManagerFactory.getPortfolioManager("YOUR_TOKEN_HERE");
 
         List<AnnualizedReturn> result =
                 manager.calculateAnnualizedReturn(trades, endDate);
